@@ -1,0 +1,67 @@
+provider "aws" {
+  region = "us-west-2"
+  access_key = "AKIATGTXGAR5HQ2HJOFR"
+  secret_key = "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"
+
+}
+
+resource "aws_vpc" "myvpc" {
+  cidr_block = "10.10.10.0/24"
+  tags = {
+    Name = "myvpc"
+  }
+}
+resource "aws_subnet" "mysubnet1" {
+  vpc_id = aws_vpc.myvpc.id
+  cidr_block = "10.10.10.0/25"
+  availability_zone = "us-west-2a"
+  tags = {
+    Name = "mysubnet1"
+  }
+}
+resource "aws_internet_gateway" "my_gateway" {
+  vpc_id = aws_vpc.myvpc.id
+  tags = {
+    Name = "mygateway"
+
+  }
+}
+resource "aws_route_table" "my_route_table" {
+  vpc_id = aws_vpc.myvpc.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.my_gateway.id
+  }
+  tags = {
+    Names = "my_route_table"
+  }
+}
+resource "aws_security_group" "my_security" {
+  name = "my_security"
+  vpc_id = aws_vpc.myvpc.id
+  ingress {
+    from_port = 0
+    protocol  = "-1"
+    to_port   = 0
+  }
+  egress {
+    from_port = 0
+    protocol  = "-1"
+    to_port   = 0
+  }
+}
+resource "aws_route_table_association" "my_association" {
+  route_table_id = aws_route_table.my_route_table.id
+  subnet_id = aws_subnet.mysubnet1.id
+}
+resource "aws_instance" "chaitanya" {
+  ami = "ami-03f65b8614a860c29"
+  instance_type = "t2.micro"
+  count = 2
+  availability_zone = "us-west-2a"
+  subnet_id = aws_subnet.mysubnet1.id
+  vpc_security_group_ids = [aws_security_group.my_security.id]
+  associate_public_ip_address = true
+  key_name = "devops_chey"
+
+  }
